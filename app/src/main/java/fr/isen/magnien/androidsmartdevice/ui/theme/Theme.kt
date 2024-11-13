@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.sp
 
 
 // Définir les couleurs principales
-val BluePrimary = Color(0xFF2196F3)
+val BluePrimary = Color(0xFF105293)
 val White = Color(0xFFFFFFFF)
 
 // Palette de couleurs pour le thème clair

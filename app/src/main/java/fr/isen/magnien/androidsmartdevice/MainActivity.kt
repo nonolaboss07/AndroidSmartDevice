@@ -40,7 +40,7 @@ fun HomeScreen() {
         topBar = {
             TopAppBar(
                 title = { Text("BLE Scanner", color = Color.White) },
-                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color(0xFF2196F3))
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color(0xFF105293))
             )
         },
         content = { padding ->
@@ -54,9 +54,9 @@ fun HomeScreen() {
             ) {
                 // Image
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    painter = painterResource(id = R.mipmap.bluetooth_foreground),
                     contentDescription = "App Icon",
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(200.dp)
                 )
 
                 // Titre
@@ -87,7 +87,7 @@ fun HomeScreen() {
                     modifier = Modifier
                         .padding(bottom = 24.dp)
                         .fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF105293))
                 ) {
                     Text("Commencer le scan", color = Color.White)
                 }

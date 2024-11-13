@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,9 @@ class ScanActivity : ComponentActivity() {
     private lateinit var bluetoothLeScanner: android.bluetooth.le.BluetoothLeScanner
 
     private val devicesList = mutableStateListOf<ScanResult>()
+
+    private val uniqueMacAddresses = mutableSetOf<String>()
+    private val uniqueDeviceNames = mutableSetOf<String>()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -83,9 +87,13 @@ class ScanActivity : ComponentActivity() {
 
         setContent {
             ScanScreen(
+                onStartScanClick = {
+                    startScan() // Appel à la méthode stopScan
+                },
                 onStopScanClick = {
                     stopScan() // Appel à la méthode stopScan
-                }
+                },
+                devices = devicesList
             )
         }
     }
@@ -126,35 +134,45 @@ class ScanActivity : ComponentActivity() {
             )
         }
     }
-
     private fun startScan() {
         bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-        bluetoothLeScanner.startScan(object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult) {
-                // Vérifier si l'appareil est déjà dans la liste
-                if (devicesList.none { it.device.address == result.device.address }) {
-                    devicesList.add(result)  // Ajouter l'appareil détecté
-                }
-            }
-            override fun onScanFailed(errorCode: Int) {
-                Toast.makeText(applicationContext, "Scan échoué : $errorCode", Toast.LENGTH_SHORT).show()
-            }
-        })
+        devicesList.clear() // Clear previous scan results
+        bluetoothLeScanner.startScan(scanCallback)
+        Log.d("BluetoothScan", "Scan démarré")
     }
-
 
     private fun stopScan() {
-        bluetoothLeScanner.stopScan(object : ScanCallback() {})
+        bluetoothLeScanner.stopScan(scanCallback)
+        Log.d("BluetoothScan", "Scan arrêté")
     }
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val device = result.device
+            val deviceAddress = device.address
+            val deviceName = device.name ?: "Appareil inconnu"
+            if (devicesList.none { it.device.address == result.device.address }) {
+                if (uniqueMacAddresses.contains(deviceAddress) || uniqueDeviceNames.contains(deviceName)) {
+                    return // Ne pas ajouter si l'appareil est déjà présent
+                }
+                // Ajouter l'adresse MAC et le nom aux ensembles pour les suivre
+                uniqueMacAddresses.add(deviceAddress)
+                uniqueDeviceNames.add(deviceName)
+                devicesList.add(result)  // Ajouter l'appareil détecté
+                Log.d("BluetoothDevice", "Appareil détecté : ${result.device.name ?: "Inconnu"} - ${result.device.address}")
+            }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            Toast.makeText(applicationContext, "Échec du scan : $errorCode", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScanScreen(onStopScanClick: () -> Unit) {
+fun ScanScreen(onStartScanClick: () -> Unit, onStopScanClick: () -> Unit, devices: List<ScanResult>) {
     var showList by remember { mutableStateOf(false) }
-
-    // Liste des appareils détectés (ce sera la liste de ScanResult)
-    val devicesList = remember { mutableStateListOf<ScanResult>() }
 
     Column(
         modifier = Modifier
@@ -163,30 +181,38 @@ fun ScanScreen(onStopScanClick: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (devicesList.isNotEmpty()) {
-            DeviceList(devicesList)  // Afficher la liste des appareils détectés
-        } else {
-            Text("Aucun appareil détecté", fontSize = 18.sp)
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { showList = !showList },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-        ) {
-            Text(if (showList) "Masquer la liste" else "Afficher la liste")
+        if (showList) {
+            ScanDevices()
         }
+        if(!showList){
+            ScanNoDevices()
+        }
+
 
         Spacer(modifier = Modifier.height(32.dp))
-
         Button(
+            onClick = { showList = !showList
+                if (showList) onStartScanClick() else onStopScanClick() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF105293))
+        ) {
+            Text(if (showList) "Masquer la liste" else "Demarrer le scan")
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        if (showList) {
+            DeviceList(devices)
+        }
+
+        /*Button(
             onClick = onStopScanClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF105293))
+
         ) {
             Text("Arrêter le scan")
-        }
+        }*/
     }
 }
 
@@ -232,7 +258,7 @@ fun ScanDevices() {
         color = Color.White,
         modifier = Modifier
             .background(
-                color = Color(0xFF2196F3),      // Couleur de fond personnalisée
+                color = Color(0xFF105293),      // Couleur de fond personnalisée
                 shape = RoundedCornerShape(8.dp) // Forme arrondie avec un rayon de 8.dp
             )
             .padding(12.dp)
@@ -246,7 +272,7 @@ fun ScanNoDevices() {
         color = Color.White,
         modifier = Modifier
             .background(
-                color = Color(0xFF2196F3),      // Couleur de fond personnalisée
+                color = Color(0xFF105293),      // Couleur de fond personnalisée
                 shape = RoundedCornerShape(8.dp) // Forme arrondie avec un rayon de 8.dp
             )
             .padding(12.dp)
