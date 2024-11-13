@@ -53,20 +53,6 @@ class ScanActivity : ComponentActivity() {
             Toast.makeText(this, "Permissions Bluetooth requises", Toast.LENGTH_SHORT).show()
         }
     }
-    // Demande de permissions pour Bluetooth et Localisation
-    /*private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.BLUETOOTH_SCAN] == true &&
-            permissions[Manifest.permission.BLUETOOTH_CONNECT] == true &&
-            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
-            // Permissions accordées, démarrer le scan
-            startScan()
-        } else {
-            // Si les permissions ne sont pas accordées, informer l'utilisateur
-            Toast.makeText(this, "Les permissions Bluetooth sont nécessaires", Toast.LENGTH_SHORT).show()
-        }
-    }*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
