@@ -64,7 +64,6 @@ class ConnectionActivity : ComponentActivity() {
                     runOnUiThread {
                         Toast.makeText(this@ConnectionActivity, "Connecté", Toast.LENGTH_SHORT).show()
                     }
-                    // Découvrir les services après la connexion
                     gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
@@ -73,9 +72,7 @@ class ConnectionActivity : ComponentActivity() {
                         Toast.makeText(this@ConnectionActivity, "Déconnecté", Toast.LENGTH_SHORT).show()
                     }
                 }
-                else -> {
-                    Log.d("BLE", "État inconnu : $newState")
-                }
+                else -> Log.d("BLE", "État inconnu : $newState")
             }
         }
 
@@ -107,6 +104,8 @@ fun ConnectionScreen(
     onConnectClick: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(false) }
+    var isConnected by remember { mutableStateOf(false) }
+    var hasDiscoveredServices by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -125,7 +124,7 @@ fun ConnectionScreen(
 
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-        } else {
+        } else if (!isConnected) {
             Button(
                 onClick = {
                     isLoading = true
@@ -135,10 +134,39 @@ fun ConnectionScreen(
             ) {
                 Text(text = "Connecter")
             }
+        } else if (isConnected && hasDiscoveredServices) {
+            ShowFeatures()
+        }
+
+        // Affichage conditionnel des états
+        if (isConnected && !hasDiscoveredServices) {
+            Text(
+                text = "Connexion réussie, découverte des services en cours...",
+                color = Color.Gray,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        } else if (!isConnected && !isLoading) {
+            Text(
+                text = "Veuillez vous connecter à l'appareil",
+                color = Color.Gray,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+    }
+
+    // Simuler l'état de connexion (à adapter en fonction du callback réel)
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            // Simule une connexion réussie après 2 secondes
+            kotlinx.coroutines.delay(2000)
+            isLoading = false
+            isConnected = true
+            hasDiscoveredServices = true // Changez en fonction de la découverte réelle des services
         }
     }
 }
-
 
 @Composable
 fun ShowFeatures() {
