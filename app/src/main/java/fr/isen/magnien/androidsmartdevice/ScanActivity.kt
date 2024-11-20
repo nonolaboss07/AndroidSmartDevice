@@ -19,16 +19,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import fr.isen.magnien.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
+//import kotlinx.coroutines.flow.internal.NoOpContinuation.context
+//import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
 class ScanActivity : ComponentActivity() {
 
@@ -79,7 +84,14 @@ class ScanActivity : ComponentActivity() {
                 onStopScanClick = {
                     stopScan() // Appel à la méthode stopScan
                 },
-                devices = devicesList
+                devices = devicesList,
+                onDeviceClick = { deviceName, deviceAddress ->
+                    val intent = Intent(this, ConnectionActivity::class.java).apply {
+                        putExtra("device_name", deviceName)
+                        putExtra("device_address", deviceAddress)
+                    }
+                    startActivity(intent)
+                }
             )
         }
     }
@@ -157,7 +169,12 @@ class ScanActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScanScreen(onStartScanClick: () -> Unit, onStopScanClick: () -> Unit, devices: List<ScanResult>) {
+fun ScanScreen(
+    onStartScanClick: () -> Unit,
+    onStopScanClick: () -> Unit,
+    devices: List<ScanResult>,
+    onDeviceClick: (String, String) -> Unit
+) {
     var showList by remember { mutableStateOf(false) }
 
     Column(
@@ -167,43 +184,41 @@ fun ScanScreen(onStartScanClick: () -> Unit, onStopScanClick: () -> Unit, device
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Spacer(modifier = Modifier.height(16.dp))
+
         if (showList) {
             ScanDevices()
-        }
-        if(!showList){
+        } else {
             ScanNoDevices()
         }
 
-
         Spacer(modifier = Modifier.height(32.dp))
+
         Button(
-            onClick = { showList = !showList
-                if (showList) onStartScanClick() else onStopScanClick() },
+            onClick = {
+                showList = !showList
+                if (showList) onStartScanClick() else onStopScanClick()
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF105293))
         ) {
-            Text(if (showList) "Masquer la liste" else "Demarrer le scan")
+            Text(if (showList) "Masquer la liste" else "Démarrer le scan")
         }
+
         Spacer(modifier = Modifier.weight(1f))
+
         if (showList) {
-            DeviceList(devices)
+            DeviceList(devices, onDeviceClick = onDeviceClick)
         }
-
-        /*Button(
-            onClick = onStopScanClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF105293))
-
-        ) {
-            Text("Arrêter le scan")
-        }*/
     }
 }
 
+
+
+
 @Composable
-fun DeviceList(devicesList: List<ScanResult>) {
+fun DeviceList(devicesList: List<ScanResult>, onDeviceClick: (String, String) -> Unit) {
+    val context = LocalContext.current
     Text(
         text = "Liste des différents appareils disponibles",
         fontSize = 24.sp,
@@ -214,11 +229,13 @@ fun DeviceList(devicesList: List<ScanResult>) {
             val device = result.device  // Récupérer le périphérique Bluetooth
             val deviceName = device.name ?: "Appareil inconnu"
             val deviceAddress = device.address
+            val rssi = result.rssi
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 4.dp)
+                    .clickable { onDeviceClick(deviceName, deviceAddress) },
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
@@ -229,6 +246,13 @@ fun DeviceList(devicesList: List<ScanResult>) {
                         text = "Adresse : $deviceAddress",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = "RSSI : $rssi dBm",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
                     )
                 }
             }
