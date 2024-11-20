@@ -32,6 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import fr.isen.magnien.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
+
+
 //import kotlinx.coroutines.flow.internal.NoOpContinuation.context
 //import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
@@ -86,11 +88,13 @@ class ScanActivity : ComponentActivity() {
                 },
                 devices = devicesList,
                 onDeviceClick = { deviceName, deviceAddress ->
+
                     val intent = Intent(this, ConnectionActivity::class.java).apply {
                         putExtra("device_name", deviceName)
                         putExtra("device_address", deviceAddress)
                     }
                     startActivity(intent)
+                    stopScan()
                 }
             )
         }
@@ -235,8 +239,10 @@ fun DeviceList(devicesList: List<ScanResult>, onDeviceClick: (String, String) ->
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
-                    .clickable { onDeviceClick(deviceName, deviceAddress) },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    .clickable { onDeviceClick(deviceName, deviceAddress)
+                        Log.d("ScanActivity", "Appareil cliqué - Nom : $deviceName, Adresse : $deviceAddress")
+                    },
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -255,6 +261,8 @@ fun DeviceList(devicesList: List<ScanResult>, onDeviceClick: (String, String) ->
                             .padding(bottom = 8.dp)
                     )
                 }
+                Log.d("ScanActivity", "Nom envoyé : $deviceName")
+                Log.d("ScanActivity", "Adresse envoyée : $deviceAddress")
             }
         }
     }
